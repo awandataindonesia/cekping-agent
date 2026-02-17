@@ -1,4 +1,4 @@
-module github.com/awandata/pingve-agent
+module github.com/awandataindonesia/cekping-agent
 
 go 1.24.0
 

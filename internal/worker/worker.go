@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/awandata/pingve-agent/internal/config"
-	"github.com/awandata/pingve-agent/internal/executor"
-	"github.com/awandata/pingve-agent/pkg/protocol"
+	"github.com/awandataindonesia/cekping-agent/internal/config"
+	"github.com/awandataindonesia/cekping-agent/internal/executor"
+	"github.com/awandataindonesia/cekping-agent/pkg/protocol"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

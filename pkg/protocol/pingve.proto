@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package protocol;
 
-option go_package = "github.com/awandata/pingve-agent/pkg/protocol;protocol";
+option go_package = "github.com/awandataindonesia/cekping-agent/pkg/protocol;protocol";
 
 service PingveService {
   rpc Connect(stream AgentMsg) returns (stream ServerMsg);

@@ -930,7 +930,7 @@ const file_pkg_protocol_pingve_proto_rawDesc = "" +
 	"\x03hop\x18\x04 \x01(\v2\x10.protocol.MTRHopR\x03hop\x12\x19\n" +
 	"\bis_final\x18\x05 \x01(\bR\aisFinal2G\n" +
 	"\rPingveService\x126\n" +
-	"\aConnect\x12\x12.protocol.AgentMsg\x1a\x13.protocol.ServerMsg(\x010\x01B8Z6github.com/awandata/pingve-agent/pkg/protocol;protocolb\x06proto3"
+	"\aConnect\x12\x12.protocol.AgentMsg\x1a\x13.protocol.ServerMsg(\x010\x01BBZ@github.com/awandataindonesia/cekping-agent/pkg/protocol;protocolb\x06proto3"
 
 var (
 	file_pkg_protocol_pingve_proto_rawDescOnce sync.Once
