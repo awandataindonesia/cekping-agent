@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package protocol;
+
+option go_package = "github.com/awandata/pingve-agent/pkg/protocol;protocol";
+
+service PingveService {
+  rpc Connect(stream AgentMsg) returns (stream ServerMsg);
+}
+
+message AgentMsg {
+  oneof payload {
+    AuthRequest auth = 1;
+    Heartbeat heartbeat = 2;
+    PingResult ping_result = 3;
+    MTRResult mtr_result = 4;
+  }
+}
+
+message ServerMsg {
+  oneof payload {
+    AuthResponse auth = 1;
+    PingTask ping_task = 2;
+    MTRTask mtr_task = 3;
+  }
+}
+
+message AuthRequest {
+  string token = 1;
+  string hostname = 2;
+  string version = 3;
+}
+
+message AuthResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message Heartbeat {
+  int64 timestamp = 1;
+  double uptime = 2;
+}
+
+message PingTask {
+  string id = 1;
+  string target = 2;
+  int32 count = 3;
+}
+
+message PingResult {
+  string task_id = 1;
+  string target = 2;
+  
+  int32 sent = 3;
+  int32 lost = 4;
+  double min_rtt = 5;
+  double max_rtt = 6;
+  double avg_rtt = 7;
+  double std_dev = 8;
+  repeated double rtts = 9; 
+
+  int32 seq = 10;
+  int32 ttl = 11;
+  double time = 12; 
+  bool is_final = 13;
+}
+
+message MTRTask {
+  string id = 1;
+  string target = 2;
+  int32 count = 3;
+}
+
+message MTRHop {
+    int32 hop = 1;
+    string ip = 2;
+    string ptr = 3;
+    string as_name = 4;
+    double loss = 5;
+    int32 sent = 6;
+    double last = 7;
+    double avg = 8;
+    double best = 9;
+    double worst = 10;
+    double stdev = 11;
+}
+
+message MTRResult {
+  string task_id = 1;
+  string target = 2;
+  string raw_output = 3;
+  MTRHop hop = 4;
+  bool is_final = 5;
+}

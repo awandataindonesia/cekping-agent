@@ -1,0 +1,15 @@
+# Binaries
+bin/
+main
+agent
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
