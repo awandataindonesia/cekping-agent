@@ -43,6 +43,10 @@ func main() {
 	log.Println("Starting PingVe Agent...")
 	cfg := config.LoadConfig()
 
+	if cfg.ServerAddr == "" || cfg.Token == "" {
+		log.Fatal("Error: PINGVE_SERVER and PINGVE_TOKEN environment variables are required.")
+	}
+
 	w := worker.NewWorker(cfg)
 	w.Start()
 }

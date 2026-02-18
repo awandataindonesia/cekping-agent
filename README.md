@@ -18,8 +18,8 @@ Agent lightweight untuk melakukan network monitoring (Ping & MTR).
 Buat file `.env` di sebelah binary agent:
 
 ```env
-SERVER_ADDR=api.cekping.com:50051
-AGENT_TOKEN=paste_token_disini
+PINGVE_SERVER=api.cekping.id:50051
+PINGVE_TOKEN=paste_token_disini
 ```
 
 ### 3. Jalankan Agent
@@ -34,15 +34,16 @@ sudo ./pingve-agent-linux-amd64
 ```
 
 #### B. Menggunakan Docker
-Jika menggunakan Docker, pastikan mode `--privileged` aktif:
+Jika menggunakan Docker, pastikan mode `--network host` aktif:
 
 ```bash
 docker run -d \
   --name pingve-agent \
-  --privileged \
+  --network host \
   --restart always \
-  --env-file .env \
-  ghcr.io/awandataindonesia/pingve-agent:latest
+  --env PINGVE_SERVER=api.cekping.id:50051 \
+  --env PINGVE_TOKEN=paste_token_disini \
+  ghcr.io/awandataindonesia/cekping-agent:latest
 ```
 
 ## Troubleshooting

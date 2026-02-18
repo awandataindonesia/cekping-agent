@@ -10,11 +10,9 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	addr := os.Getenv("SERVER_ADDR")
-	if addr == "" {
-		addr = "localhost:50051"
-	}
-	token := os.Getenv("AGENT_TOKEN")
+	addr := os.Getenv("PINGVE_SERVER")
+	token := os.Getenv("PINGVE_TOKEN")
+
 	return &Config{
 		ServerAddr: addr,
 		Token:      token,
