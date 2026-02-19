@@ -55,6 +55,12 @@ if [ "$VERSION" == "latest" ]; then
     DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY_NAME}"
 fi
 
+# Stop existing service if running
+if systemctl is-active --quiet pingve-agent; then
+    echo "Stopping existing PingVe Agent service..."
+    systemctl stop pingve-agent
+fi
+
 echo "Downloading CekPing Agent from $DOWNLOAD_URL..."
 if ! curl -f -L -o /usr/local/bin/pingve-agent "$DOWNLOAD_URL"; then
     echo "Error: Failed to download agent binary from $DOWNLOAD_URL"
