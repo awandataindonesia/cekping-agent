@@ -12,6 +12,7 @@ import (
 	"github.com/awandataindonesia/cekping-agent/pkg/protocol"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -39,7 +40,15 @@ func (w *Worker) Start() {
 }
 
 func (w *Worker) connectAndLoop() error {
-	conn, err := grpc.Dial(w.cfg.ServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var opts []grpc.DialOption
+	if w.cfg.Secure {
+		creds := credentials.NewClientTLSFromCert(nil, "")
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+
+	conn, err := grpc.Dial(w.cfg.ServerAddr, opts...)
 	if err != nil {
 		return err
 	}

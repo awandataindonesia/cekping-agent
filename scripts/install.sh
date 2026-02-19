@@ -7,15 +7,18 @@ SERVER_ADDR=""
 TOKEN=""
 VERSION="latest"
 REPO="awandataindonesia/cekping-agent"
+SECURE="false"
 
 # Parse arguments
-while getopts "t:s:v:" opt; do
+while getopts "t:s:v:S" opt; do
   case $opt in
     t) TOKEN="$OPTARG"
     ;;
     s) SERVER_ADDR="$OPTARG"
     ;;
     v) VERSION="$OPTARG"
+    ;;
+    S) SECURE="true"
     ;;
     \?) echo "Invalid option -$OPTARG" >&2
     exit 1
@@ -73,6 +76,7 @@ Restart=always
 User=root
 Environment=PINGVE_TOKEN=${TOKEN}
 Environment=PINGVE_SERVER=${SERVER_ADDR}
+Environment=PINGVE_SECURE=${SECURE}
 
 [Install]
 WantedBy=multi-user.target
