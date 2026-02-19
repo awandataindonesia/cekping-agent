@@ -53,7 +53,11 @@ if [ "$VERSION" == "latest" ]; then
 fi
 
 echo "Downloading CekPing Agent from $DOWNLOAD_URL..."
-curl -L -o /usr/local/bin/pingve-agent "$DOWNLOAD_URL"
+if ! curl -f -L -o /usr/local/bin/pingve-agent "$DOWNLOAD_URL"; then
+    echo "Error: Failed to download agent binary from $DOWNLOAD_URL"
+    echo "Please ensure the version '$VERSION' exists and assets are uploaded."
+    exit 1
+fi
 chmod +x /usr/local/bin/pingve-agent
 
 # Create Systemd Service
