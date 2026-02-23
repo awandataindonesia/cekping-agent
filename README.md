@@ -24,8 +24,8 @@ docker run -d \
   --name cekping-agent \
   --network host \
   --restart always \
-  --env PINGVE_SERVER=grpc.cekping.id:443 \
-  --env PINGVE_TOKEN=paste_token_disini_tanpa_tanda_kutip \
+  --env PINGVE_SERVER=cekping.id:50051 \
+  --env PINGVE_TOKEN="TOKEN_ASLI_ANDA_DISINI" \
   --env PINGVE_SECURE=true \
   ghcr.io/awandataindonesia/cekping-agent:latest
 ```
@@ -38,8 +38,8 @@ podman run -d \
   --name cekping-agent \
   --network host \
   --cap-add=NET_RAW \
-  --env PINGVE_SERVER=grpc.cekping.id:443 \
-  --env PINGVE_TOKEN=paste_token_disini_tanpa_tanda_kutip \
+  --env PINGVE_SERVER=cekping.id:50051 \
+  --env PINGVE_TOKEN="TOKEN_ANDA" \
   --env PINGVE_SECURE=true \
   ghcr.io/awandataindonesia/cekping-agent:latest
 ```
@@ -49,8 +49,8 @@ Jika tidak ingin menggunakan container, Anda dapat menggunakan script instalasi 
 
 ```bash
 curl -sL https://raw.githubusercontent.com/awandataindonesia/cekping-agent/main/scripts/install.sh | sudo bash -s -- \
-  -t "paste_token_disini" \
-  -s "grpc.cekping.id:443" -S 
+  -t "TOKEN_ANDA" \
+  -s "cekping.id:50051" -S 
 ```
 
 Script ini secara otomatis akan mengatur *environment variables* yang dibutuhkan dan menjalankan agen di background.
