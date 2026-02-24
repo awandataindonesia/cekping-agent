@@ -25,7 +25,7 @@ func DoPing(target string, count int, onPacket func(seq, ttl int, rtt float64)) 
 	}
 	pinger.Count = count
 	pinger.Interval = 1 * time.Second // 1 second as per plan
-	pinger.Timeout = 15 * time.Second
+	pinger.Timeout = time.Duration(count)*time.Second + 5*time.Second
 
 	pinger.SetPrivileged(true)
 
