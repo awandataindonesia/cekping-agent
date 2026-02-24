@@ -75,14 +75,16 @@ func DoPing(target string, count int, onPacket func(seq, ttl int, rtt float64)) 
 		if err != nil {
 			// Timeout (RTO)
 			onPacket(seq, 0, 0) // Sending 0 RTT indicates RTO
-			continue
+			goto WaitInterval
 		}
 
-		// Parse Reply
-		rm, err := icmp.ParseMessage(1, rb[:n])
-		if err != nil || rm.Type != ipv4.ICMPTypeEchoReply {
-			onPacket(seq, 0, 0) // Treat parsing failure / non-reply as RTO
-			continue
+		{
+			// Parse Reply
+			rm, err := icmp.ParseMessage(1, rb[:n])
+			if err != nil || rm.Type != ipv4.ICMPTypeEchoReply {
+				onPacket(seq, 0, 0) // Treat parsing failure / non-reply as RTO
+				goto WaitInterval
+			}
 		}
 
 		// Success
@@ -98,6 +100,7 @@ func DoPing(target string, count int, onPacket func(seq, ttl int, rtt float64)) 
 		// Fire callback
 		onPacket(seq, 0, rtt)
 
+	WaitInterval:
 		// Wait remainder of the 1-second interval
 		elapsed := time.Since(start)
 		if elapsed < time.Second {
