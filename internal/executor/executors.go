@@ -96,7 +96,7 @@ func DoMTR(target string, onHop func(MTRHopStats)) error {
 	}
 
 	// 4. Run Cycles
-	id := os.Getpid() & 0xffff
+	id := (os.Getpid() & 0xffff) + int(time.Now().UnixNano()&0xffff)
 
 	for seq := 1; seq <= cycles; seq++ {
 		// Stop if we reached target in previous cycle?
