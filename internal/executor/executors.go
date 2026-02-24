@@ -8,8 +8,6 @@ import (
 
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
-
-	probing "github.com/prometheus-community/pro-bing"
 )
 
 type PingStats struct {
@@ -19,40 +17,116 @@ type PingStats struct {
 }
 
 func DoPing(target string, count int, onPacket func(seq, ttl int, rtt float64)) (*PingStats, error) {
-	pinger, err := probing.NewPinger(target)
-	if err != nil {
-		return nil, err
-	}
-	pinger.Count = count
-	pinger.Interval = 1 * time.Second // 1 second as per plan
-	pinger.Timeout = time.Duration(count)*time.Second + 5*time.Second
-
-	pinger.SetPrivileged(true)
-
-	pinger.OnRecv = func(pkt *probing.Packet) {
-		rttVal := float64(pkt.Rtt.Seconds() * 1000)
-		onPacket(pkt.Seq, pkt.TTL, rttVal)
-	}
-
-	err = pinger.Run()
+	// 1. Resolve Target
+	dst, err := net.ResolveIPAddr("ip4", target)
 	if err != nil {
 		return nil, err
 	}
 
-	stats := pinger.Statistics()
-	rtts := make([]float64, len(stats.Rtts))
-	for i, d := range stats.Rtts {
-		rtts[i] = float64(d.Seconds() * 1000)
+	// 2. Open PacketConn (ICMP)
+	c, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+
+	// 3. Stats Tracking
+	stats := &PingStats{
+		Min: 999999,
+		Max: 0,
+	}
+	sent := 0
+	received := 0
+
+	// Unique ID different from MTR to avoid collision
+	id := (os.Getpid() & 0xffff) + int(time.Now().UnixNano()&0xffff) + 1
+	timeout := 1 * time.Second
+
+	for seq := 1; seq <= count; seq++ {
+		// Construct Message
+		wm := icmp.Message{
+			Type: ipv4.ICMPTypeEcho, Code: 0,
+			Body: &icmp.Echo{
+				ID: id, Seq: seq,
+				Data: []byte("PingVe-Ping"),
+			},
+		}
+		wb, err := wm.Marshal(nil)
+		if err != nil {
+			time.Sleep(timeout) // simulate delay on error
+			continue
+		}
+
+		// Send
+		start := time.Now()
+		if _, err := c.WriteTo(wb, dst); err != nil {
+			time.Sleep(timeout)
+			continue
+		}
+		sent++
+
+		// Read Reply (with timeout)
+		c.SetReadDeadline(time.Now().Add(timeout))
+		rb := make([]byte, 1500)
+		n, _, err := c.ReadFrom(rb)
+
+		rtt := time.Since(start).Seconds() * 1000 // ms
+
+		if err != nil {
+			// Timeout (RTO)
+			onPacket(seq, 0, 0) // Sending 0 RTT indicates RTO
+			continue
+		}
+
+		// Parse Reply
+		rm, err := icmp.ParseMessage(1, rb[:n])
+		if err != nil || rm.Type != ipv4.ICMPTypeEchoReply {
+			onPacket(seq, 0, 0) // Treat parsing failure / non-reply as RTO
+			continue
+		}
+
+		// Success
+		received++
+		stats.Rtts = append(stats.Rtts, rtt)
+		if rtt < stats.Min {
+			stats.Min = rtt
+		}
+		if rtt > stats.Max {
+			stats.Max = rtt
+		}
+
+		// Fire callback
+		onPacket(seq, 0, rtt)
+
+		// Wait remainder of the 1-second interval
+		elapsed := time.Since(start)
+		if elapsed < time.Second {
+			time.Sleep(time.Second - elapsed)
+		}
 	}
 
-	return &PingStats{
-		Min:        float64(stats.MinRtt.Seconds() * 1000),
-		Max:        float64(stats.MaxRtt.Seconds() * 1000),
-		Avg:        float64(stats.AvgRtt.Seconds() * 1000),
-		StdDev:     float64(stats.StdDevRtt.Seconds() * 1000),
-		PacketLoss: stats.PacketLoss,
-		Rtts:       rtts,
-	}, nil
+	// Finalize Stats
+	if received > 0 {
+		sum := 0.0
+		for _, v := range stats.Rtts {
+			sum += v
+		}
+		stats.Avg = sum / float64(received)
+
+		if received > 1 {
+			variance := 0.0
+			for _, v := range stats.Rtts {
+				variance += math.Pow(v-stats.Avg, 2)
+			}
+			stats.StdDev = math.Sqrt(variance / float64(received-1))
+		}
+	} else {
+		stats.Min = 0
+	}
+
+	stats.PacketLoss = float64(sent-received) / float64(sent) * 100
+
+	return stats, nil
 }
 
 type MTRHopStats struct {
@@ -97,18 +171,11 @@ func DoMTR(target string, onHop func(MTRHopStats)) error {
 
 	// 4. Run Cycles
 	id := (os.Getpid() & 0xffff) + int(time.Now().UnixNano()&0xffff)
+	maxDiscoveredHop := maxHops
 
 	for seq := 1; seq <= cycles; seq++ {
-		// Stop if we reached target in previous cycle?
-		// MTR continues probing all hops even if target found at hop X.
-		// But in discovery, we don't know X.
-		// We'll just run 1..30. If we hit target at 5, hops 6..30 will timeout (or we stop sending if we know target is at 5).
-		// Let's track `maxDiscoveredHop`.
-
-		targetReachedAt := 0
-
 		for ttl := 1; ttl <= maxHops; ttl++ {
-			if targetReachedAt > 0 && ttl > targetReachedAt {
+			if ttl > maxDiscoveredHop {
 				break
 			}
 
@@ -146,69 +213,75 @@ func DoMTR(target string, onHop func(MTRHopStats)) error {
 			n, peer, err := c.ReadFrom(rb)
 
 			rtt := time.Since(start).Seconds() * 1000 // ms
+			h := hops[ttl]
 
 			if err != nil {
-				// Recalculate Loss
-				hops[ttl].Loss = float64(hops[ttl].Sent-len(hops[ttl].Rtts)) / float64(hops[ttl].Sent) * 100
-				onHop(*hops[ttl])
-				continue
+				// Timeout / Error: Packet lost
+				goto UpdateStats
 			}
 
 			// Parse Reply
-			rm, err := icmp.ParseMessage(1, rb[:n])
-			if err != nil {
-				continue
-			}
-
-			// Check Type
-			isReply := false
-
-			switch rm.Type {
-			case ipv4.ICMPTypeTimeExceeded:
-				// Valid Hop response
-			case ipv4.ICMPTypeEchoReply:
-				isReply = true
-			default:
-				// Ignore others
-				continue
-			}
-
-			// Update Hop Stats
-			h := hops[ttl]
-			h.IP = peer.String() // The responder
-			h.Rtts = append(h.Rtts, rtt)
-			h.Last = rtt
-
-			// Min/Max/Avg/StdDev
-			if rtt < h.Best {
-				h.Best = rtt
-			}
-			if rtt > h.Worst {
-				h.Worst = rtt
-			}
-
-			sum := 0.0
-			for _, v := range h.Rtts {
-				sum += v
-			}
-			h.Avg = sum / float64(len(h.Rtts))
-
-			if len(h.Rtts) > 1 {
-				variance := 0.0
-				for _, v := range h.Rtts {
-					variance += math.Pow(v-h.Avg, 2)
+			{
+				rm, err := icmp.ParseMessage(1, rb[:n])
+				if err != nil {
+					// Corrupt packet: treat as loss
+					goto UpdateStats
 				}
-				h.StdDev = math.Sqrt(variance / float64(len(h.Rtts)-1)) // -1 sample
+
+				// Check Type
+				isReply := false
+				switch rm.Type {
+				case ipv4.ICMPTypeTimeExceeded:
+					// Valid Hop response
+				case ipv4.ICMPTypeEchoReply:
+					isReply = true
+				default:
+					// Ignore others: treat as loss
+					goto UpdateStats
+				}
+
+				// Success: Update Hop Stats
+				if h.IP == "" {
+					h.IP = peer.String() // The responder
+				}
+				h.Rtts = append(h.Rtts, rtt)
+				h.Last = rtt
+
+				// Min/Max/Avg/StdDev
+				if rtt < h.Best {
+					h.Best = rtt
+				}
+				if rtt > h.Worst {
+					h.Worst = rtt
+				}
+
+				sum := 0.0
+				for _, v := range h.Rtts {
+					sum += v
+				}
+				h.Avg = sum / float64(len(h.Rtts))
+
+				if len(h.Rtts) > 1 {
+					variance := 0.0
+					for _, v := range h.Rtts {
+						variance += math.Pow(v-h.Avg, 2)
+					}
+					h.StdDev = math.Sqrt(variance / float64(len(h.Rtts)-1)) // -1 sample
+				}
+
+				if isReply {
+					if ttl < maxDiscoveredHop {
+						maxDiscoveredHop = ttl
+					}
+				}
 			}
 
-			// Recalculate Loss
+		UpdateStats:
+			// Recalculate Loss based on Sent vs Received
 			h.Loss = float64(h.Sent-len(h.Rtts)) / float64(h.Sent) * 100
 
+			// Always trigger onHop so UI gets the timeout/RTO update
 			onHop(*h)
-
-			if isReply {
-				targetReachedAt = ttl
-			}
 		}
 
 		// Wait a bit between cycles?
