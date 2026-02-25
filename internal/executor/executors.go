@@ -59,11 +59,12 @@ func DoPing(target string, count int, onPacket func(seq, ttl int, rtt float64)) 
 
 		// Send
 		start := time.Now()
+		sent++
 		if _, err := c.WriteTo(wb, dst); err != nil {
+			onPacket(seq, 0, 0)
 			time.Sleep(timeout)
 			continue
 		}
-		sent++
 
 		// Read Reply (with timeout)
 		c.SetReadDeadline(time.Now().Add(timeout))
