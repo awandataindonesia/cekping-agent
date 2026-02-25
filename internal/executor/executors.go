@@ -67,39 +67,45 @@ func DoPing(target string, count int, onPacket func(seq, ttl int, rtt float64)) 
 		}
 
 		// Read Reply (with timeout)
-		c.SetReadDeadline(time.Now().Add(timeout))
-		rb := make([]byte, 1500)
-		n, _, err := c.ReadFrom(rb)
+		var rtt float64
+		deadline := time.Now().Add(timeout)
+		for {
+			c.SetReadDeadline(deadline)
+			rb := make([]byte, 1500)
+			n, _, err := c.ReadFrom(rb)
 
-		rtt := time.Since(start).Seconds() * 1000 // ms
-
-		if err != nil {
-			// Timeout (RTO)
-			onPacket(seq, 0, 0) // Sending 0 RTT indicates RTO
-			goto WaitInterval
-		}
-
-		{
-			// Parse Reply
-			rm, err := icmp.ParseMessage(1, rb[:n])
-			if err != nil || rm.Type != ipv4.ICMPTypeEchoReply {
-				onPacket(seq, 0, 0) // Treat parsing failure / non-reply as RTO
+			if err != nil {
+				// Timeout (RTO) or socket error
+				onPacket(seq, 0, 0)
 				goto WaitInterval
 			}
-		}
 
-		// Success
-		received++
-		stats.Rtts = append(stats.Rtts, rtt)
-		if rtt < stats.Min {
-			stats.Min = rtt
-		}
-		if rtt > stats.Max {
-			stats.Max = rtt
-		}
+			// Parse Reply
+			rm, err := icmp.ParseMessage(1, rb[:n])
+			if err != nil {
+				continue // Ignore parse failures, wait for next packet
+			}
 
-		// Fire callback
-		onPacket(seq, 0, rtt)
+			if rm.Type == ipv4.ICMPTypeEchoReply {
+				if echo, ok := rm.Body.(*icmp.Echo); ok {
+					if echo.ID == id && echo.Seq == seq {
+						// Success! We found our specific packet
+						rtt = time.Since(start).Seconds() * 1000 // ms
+						received++
+						stats.Rtts = append(stats.Rtts, rtt)
+						if rtt < stats.Min {
+							stats.Min = rtt
+						}
+						if rtt > stats.Max {
+							stats.Max = rtt
+						}
+						// Fire callback
+						onPacket(seq, 0, rtt)
+						break
+					}
+				}
+			}
+		}
 
 	WaitInterval:
 		// Wait remainder of the 1-second interval
@@ -212,37 +218,53 @@ func DoMTR(target string, onHop func(MTRHopStats)) error {
 			hops[ttl].Sent++
 
 			// Read Reply (with timeout)
-			c.SetReadDeadline(time.Now().Add(timeout))
-			rb := make([]byte, 1500)
-			n, peer, err := c.ReadFrom(rb)
+			var rtt float64
+			deadline := time.Now().Add(timeout)
+			for {
+				c.SetReadDeadline(deadline)
+				rb := make([]byte, 1500)
+				n, peer, err := c.ReadFrom(rb)
 
-			rtt := time.Since(start).Seconds() * 1000 // ms
-			h := hops[ttl]
+				if err != nil {
+					// Timeout / Error: Packet lost
+					goto UpdateStats
+				}
 
-			if err != nil {
-				// Timeout / Error: Packet lost
-				goto UpdateStats
-			}
-
-			// Parse Reply
-			{
+				// Parse Reply
 				rm, err := icmp.ParseMessage(1, rb[:n])
 				if err != nil {
-					// Corrupt packet: treat as loss
-					goto UpdateStats
+					continue // Corrupt packet: wait for another
 				}
 
 				// Check Type
 				isReply := false
 				switch rm.Type {
 				case ipv4.ICMPTypeTimeExceeded:
+					// Strict filter: Check if the encapsulated original packet matches our MTR packet
+					if timeExceeded, ok := rm.Body.(*icmp.TimeExceeded); ok {
+						if len(timeExceeded.Data) >= 28 { // IPv4 header (20) + ICMP header (8)
+							// Extract inner ICMP Identifier (bytes 24-25 in total data)
+							innerID := int(timeExceeded.Data[24])<<8 | int(timeExceeded.Data[25])
+							if innerID != id {
+								continue // Not our packet
+							}
+						}
+					}
 					// Valid Hop response
 				case ipv4.ICMPTypeEchoReply:
+					if echo, ok := rm.Body.(*icmp.Echo); ok {
+						if echo.ID != id || echo.Seq != ((seq<<8)|ttl) {
+							continue // Not our specific echo reply
+						}
+					}
 					isReply = true
 				default:
-					// Ignore others: treat as loss
-					goto UpdateStats
+					// Ignore others
+					continue
 				}
+
+				rtt = time.Since(start).Seconds() * 1000 // ms
+				h := hops[ttl]
 
 				// Success: Update Hop Stats
 				if h.IP == "" {
@@ -278,9 +300,11 @@ func DoMTR(target string, onHop func(MTRHopStats)) error {
 						maxDiscoveredHop = ttl
 					}
 				}
+				break // Successfully parsed a valid packet for this TTL
 			}
 
 		UpdateStats:
+			h := hops[ttl]
 			// Recalculate Loss based on Sent vs Received
 			h.Loss = float64(h.Sent-len(h.Rtts)) / float64(h.Sent) * 100
 
