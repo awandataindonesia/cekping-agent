@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/awandataindonesia/cekping-agent/internal/config"
@@ -65,8 +66,13 @@ func (w *Worker) connectAndLoop() error {
 		hostname = "unknown-agent"
 	}
 
+	// Create thread-safe stream wrapper
+	safeStream := &ThreadSafeStream{
+		stream: stream,
+	}
+
 	// 1. Auth
-	if err := stream.Send(&protocol.AgentMsg{
+	if err := safeStream.Send(&protocol.AgentMsg{
 		Payload: &protocol.AgentMsg_Auth{
 			Auth: &protocol.AuthRequest{
 				Token:    w.cfg.Token,
@@ -94,7 +100,7 @@ func (w *Worker) connectAndLoop() error {
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
-			if err := stream.Send(&protocol.AgentMsg{
+			if err := safeStream.Send(&protocol.AgentMsg{
 				Payload: &protocol.AgentMsg_Heartbeat{
 					Heartbeat: &protocol.Heartbeat{
 						Timestamp: time.Now().Unix(),
@@ -117,11 +123,23 @@ func (w *Worker) connectAndLoop() error {
 			return err
 		}
 
-		go w.handleMessage(stream, msg)
+		go w.handleMessage(safeStream, msg)
 	}
 }
 
-func (w *Worker) handleMessage(stream protocol.PingveService_ConnectClient, msg *protocol.ServerMsg) {
+// ThreadSafeStream wraps a grpc client stream with a mutex to prevent data races during concurrent Sends.
+type ThreadSafeStream struct {
+	stream protocol.PingveService_ConnectClient
+	mu     sync.Mutex
+}
+
+func (s *ThreadSafeStream) Send(msg *protocol.AgentMsg) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.stream.Send(msg)
+}
+
+func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg) {
 	switch payload := msg.Payload.(type) {
 	case *protocol.ServerMsg_PingTask:
 		task := payload.PingTask
