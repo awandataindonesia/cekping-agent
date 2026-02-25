@@ -77,6 +77,8 @@ Description=PingVe Agent
 After=network.target
 
 [Service]
+ExecStartPre=/usr/bin/curl -f -s -L -o /usr/local/bin/pingve-agent "${DOWNLOAD_URL}"
+ExecStartPre=/bin/chmod +x /usr/local/bin/pingve-agent
 ExecStart=/usr/local/bin/pingve-agent
 Restart=always
 User=root

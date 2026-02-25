@@ -23,6 +23,7 @@ Jika menggunakan Docker, sangat disarankan menggunakan mode `--network host` aga
 docker run -d \
   --name cekping-agent \
   --network host \
+  --pull always \
   --restart always \
   --env PINGVE_SERVER=cekping.id:50051 \
   --env PINGVE_TOKEN="TOKEN_ASLI_ANDA_DISINI" \
