@@ -39,16 +39,18 @@ jobs:
           path: dist/*
           retention-days: 5
 
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
+          name: ${{ github.ref_name == 'main' && 'Latest Development Build' || github.ref_name }}
           files: |
             dist/pingve-agent-linux-amd64
             dist/pingve-agent-linux-arm64
           generate_release_notes: true
           draft: false
-          prerelease: false
+          prerelease: ${{ github.ref_name == 'main' }}
+          make_latest: ${{ github.ref_name == 'main' && 'true' || 'false' }}
 
   build-docker:
     name: Build & Push Docker Image
