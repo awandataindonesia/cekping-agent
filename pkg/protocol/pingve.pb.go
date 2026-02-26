@@ -142,6 +142,7 @@ type ServerMsg struct {
 	//	*ServerMsg_Auth
 	//	*ServerMsg_PingTask
 	//	*ServerMsg_MtrTask
+	//	*ServerMsg_CancelTask
 	Payload       isServerMsg_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -211,6 +212,15 @@ func (x *ServerMsg) GetMtrTask() *MTRTask {
 	return nil
 }
 
+func (x *ServerMsg) GetCancelTask() *CancelTask {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerMsg_CancelTask); ok {
+			return x.CancelTask
+		}
+	}
+	return nil
+}
+
 type isServerMsg_Payload interface {
 	isServerMsg_Payload()
 }
@@ -227,11 +237,69 @@ type ServerMsg_MtrTask struct {
 	MtrTask *MTRTask `protobuf:"bytes,3,opt,name=mtr_task,json=mtrTask,proto3,oneof"`
 }
 
+type ServerMsg_CancelTask struct {
+	CancelTask *CancelTask `protobuf:"bytes,4,opt,name=cancel_task,json=cancelTask,proto3,oneof"`
+}
+
 func (*ServerMsg_Auth) isServerMsg_Payload() {}
 
 func (*ServerMsg_PingTask) isServerMsg_Payload() {}
 
 func (*ServerMsg_MtrTask) isServerMsg_Payload() {}
+
+func (*ServerMsg_CancelTask) isServerMsg_Payload() {}
+
+type CancelTask struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`         // Task ID to cancel
+	Target        string                 `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"` // Target (optional, for safety)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelTask) Reset() {
+	*x = CancelTask{}
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelTask) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelTask) ProtoMessage() {}
+
+func (x *CancelTask) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelTask.ProtoReflect.Descriptor instead.
+func (*CancelTask) Descriptor() ([]byte, []int) {
+	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CancelTask) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CancelTask) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
 
 type AuthRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -244,7 +312,7 @@ type AuthRequest struct {
 
 func (x *AuthRequest) Reset() {
 	*x = AuthRequest{}
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[2]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -256,7 +324,7 @@ func (x *AuthRequest) String() string {
 func (*AuthRequest) ProtoMessage() {}
 
 func (x *AuthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[2]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -269,7 +337,7 @@ func (x *AuthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthRequest.ProtoReflect.Descriptor instead.
 func (*AuthRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{2}
+	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AuthRequest) GetToken() string {
@@ -303,7 +371,7 @@ type AuthResponse struct {
 
 func (x *AuthResponse) Reset() {
 	*x = AuthResponse{}
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[3]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -315,7 +383,7 @@ func (x *AuthResponse) String() string {
 func (*AuthResponse) ProtoMessage() {}
 
 func (x *AuthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[3]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -328,7 +396,7 @@ func (x *AuthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthResponse.ProtoReflect.Descriptor instead.
 func (*AuthResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{3}
+	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *AuthResponse) GetSuccess() bool {
@@ -355,7 +423,7 @@ type Heartbeat struct {
 
 func (x *Heartbeat) Reset() {
 	*x = Heartbeat{}
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[4]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -367,7 +435,7 @@ func (x *Heartbeat) String() string {
 func (*Heartbeat) ProtoMessage() {}
 
 func (x *Heartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[4]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -380,7 +448,7 @@ func (x *Heartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Heartbeat.ProtoReflect.Descriptor instead.
 func (*Heartbeat) Descriptor() ([]byte, []int) {
-	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{4}
+	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Heartbeat) GetTimestamp() int64 {
@@ -408,7 +476,7 @@ type PingTask struct {
 
 func (x *PingTask) Reset() {
 	*x = PingTask{}
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[5]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -420,7 +488,7 @@ func (x *PingTask) String() string {
 func (*PingTask) ProtoMessage() {}
 
 func (x *PingTask) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[5]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -433,7 +501,7 @@ func (x *PingTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingTask.ProtoReflect.Descriptor instead.
 func (*PingTask) Descriptor() ([]byte, []int) {
-	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{5}
+	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PingTask) GetId() string {
@@ -478,7 +546,7 @@ type PingResult struct {
 
 func (x *PingResult) Reset() {
 	*x = PingResult{}
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[6]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -490,7 +558,7 @@ func (x *PingResult) String() string {
 func (*PingResult) ProtoMessage() {}
 
 func (x *PingResult) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[6]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -503,7 +571,7 @@ func (x *PingResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingResult.ProtoReflect.Descriptor instead.
 func (*PingResult) Descriptor() ([]byte, []int) {
-	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{6}
+	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PingResult) GetTaskId() string {
@@ -608,7 +676,7 @@ type MTRTask struct {
 
 func (x *MTRTask) Reset() {
 	*x = MTRTask{}
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[7]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -620,7 +688,7 @@ func (x *MTRTask) String() string {
 func (*MTRTask) ProtoMessage() {}
 
 func (x *MTRTask) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[7]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -633,7 +701,7 @@ func (x *MTRTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MTRTask.ProtoReflect.Descriptor instead.
 func (*MTRTask) Descriptor() ([]byte, []int) {
-	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{7}
+	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MTRTask) GetId() string {
@@ -676,7 +744,7 @@ type MTRHop struct {
 
 func (x *MTRHop) Reset() {
 	*x = MTRHop{}
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[8]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -688,7 +756,7 @@ func (x *MTRHop) String() string {
 func (*MTRHop) ProtoMessage() {}
 
 func (x *MTRHop) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[8]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -701,7 +769,7 @@ func (x *MTRHop) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MTRHop.ProtoReflect.Descriptor instead.
 func (*MTRHop) Descriptor() ([]byte, []int) {
-	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{8}
+	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MTRHop) GetHop() int32 {
@@ -794,7 +862,7 @@ type MTRResult struct {
 
 func (x *MTRResult) Reset() {
 	*x = MTRResult{}
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[9]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -806,7 +874,7 @@ func (x *MTRResult) String() string {
 func (*MTRResult) ProtoMessage() {}
 
 func (x *MTRResult) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_protocol_pingve_proto_msgTypes[9]
+	mi := &file_pkg_protocol_pingve_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -819,7 +887,7 @@ func (x *MTRResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MTRResult.ProtoReflect.Descriptor instead.
 func (*MTRResult) Descriptor() ([]byte, []int) {
-	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{9}
+	return file_pkg_protocol_pingve_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *MTRResult) GetTaskId() string {
@@ -869,12 +937,18 @@ const file_pkg_protocol_pingve_proto_rawDesc = "" +
 	"pingResult\x124\n" +
 	"\n" +
 	"mtr_result\x18\x04 \x01(\v2\x13.protocol.MTRResultH\x00R\tmtrResultB\t\n" +
-	"\apayload\"\xa7\x01\n" +
+	"\apayload\"\xe0\x01\n" +
 	"\tServerMsg\x12,\n" +
 	"\x04auth\x18\x01 \x01(\v2\x16.protocol.AuthResponseH\x00R\x04auth\x121\n" +
 	"\tping_task\x18\x02 \x01(\v2\x12.protocol.PingTaskH\x00R\bpingTask\x12.\n" +
-	"\bmtr_task\x18\x03 \x01(\v2\x11.protocol.MTRTaskH\x00R\amtrTaskB\t\n" +
-	"\apayload\"Y\n" +
+	"\bmtr_task\x18\x03 \x01(\v2\x11.protocol.MTRTaskH\x00R\amtrTask\x127\n" +
+	"\vcancel_task\x18\x04 \x01(\v2\x14.protocol.CancelTaskH\x00R\n" +
+	"cancelTaskB\t\n" +
+	"\apayload\"4\n" +
+	"\n" +
+	"CancelTask\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x06target\x18\x02 \x01(\tR\x06target\"Y\n" +
 	"\vAuthRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1a\n" +
 	"\bhostname\x18\x02 \x01(\tR\bhostname\x12\x18\n" +
@@ -944,35 +1018,37 @@ func file_pkg_protocol_pingve_proto_rawDescGZIP() []byte {
 	return file_pkg_protocol_pingve_proto_rawDescData
 }
 
-var file_pkg_protocol_pingve_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_pkg_protocol_pingve_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_pkg_protocol_pingve_proto_goTypes = []any{
 	(*AgentMsg)(nil),     // 0: protocol.AgentMsg
 	(*ServerMsg)(nil),    // 1: protocol.ServerMsg
-	(*AuthRequest)(nil),  // 2: protocol.AuthRequest
-	(*AuthResponse)(nil), // 3: protocol.AuthResponse
-	(*Heartbeat)(nil),    // 4: protocol.Heartbeat
-	(*PingTask)(nil),     // 5: protocol.PingTask
-	(*PingResult)(nil),   // 6: protocol.PingResult
-	(*MTRTask)(nil),      // 7: protocol.MTRTask
-	(*MTRHop)(nil),       // 8: protocol.MTRHop
-	(*MTRResult)(nil),    // 9: protocol.MTRResult
+	(*CancelTask)(nil),   // 2: protocol.CancelTask
+	(*AuthRequest)(nil),  // 3: protocol.AuthRequest
+	(*AuthResponse)(nil), // 4: protocol.AuthResponse
+	(*Heartbeat)(nil),    // 5: protocol.Heartbeat
+	(*PingTask)(nil),     // 6: protocol.PingTask
+	(*PingResult)(nil),   // 7: protocol.PingResult
+	(*MTRTask)(nil),      // 8: protocol.MTRTask
+	(*MTRHop)(nil),       // 9: protocol.MTRHop
+	(*MTRResult)(nil),    // 10: protocol.MTRResult
 }
 var file_pkg_protocol_pingve_proto_depIdxs = []int32{
-	2, // 0: protocol.AgentMsg.auth:type_name -> protocol.AuthRequest
-	4, // 1: protocol.AgentMsg.heartbeat:type_name -> protocol.Heartbeat
-	6, // 2: protocol.AgentMsg.ping_result:type_name -> protocol.PingResult
-	9, // 3: protocol.AgentMsg.mtr_result:type_name -> protocol.MTRResult
-	3, // 4: protocol.ServerMsg.auth:type_name -> protocol.AuthResponse
-	5, // 5: protocol.ServerMsg.ping_task:type_name -> protocol.PingTask
-	7, // 6: protocol.ServerMsg.mtr_task:type_name -> protocol.MTRTask
-	8, // 7: protocol.MTRResult.hop:type_name -> protocol.MTRHop
-	0, // 8: protocol.PingveService.Connect:input_type -> protocol.AgentMsg
-	1, // 9: protocol.PingveService.Connect:output_type -> protocol.ServerMsg
-	9, // [9:10] is the sub-list for method output_type
-	8, // [8:9] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	3,  // 0: protocol.AgentMsg.auth:type_name -> protocol.AuthRequest
+	5,  // 1: protocol.AgentMsg.heartbeat:type_name -> protocol.Heartbeat
+	7,  // 2: protocol.AgentMsg.ping_result:type_name -> protocol.PingResult
+	10, // 3: protocol.AgentMsg.mtr_result:type_name -> protocol.MTRResult
+	4,  // 4: protocol.ServerMsg.auth:type_name -> protocol.AuthResponse
+	6,  // 5: protocol.ServerMsg.ping_task:type_name -> protocol.PingTask
+	8,  // 6: protocol.ServerMsg.mtr_task:type_name -> protocol.MTRTask
+	2,  // 7: protocol.ServerMsg.cancel_task:type_name -> protocol.CancelTask
+	9,  // 8: protocol.MTRResult.hop:type_name -> protocol.MTRHop
+	0,  // 9: protocol.PingveService.Connect:input_type -> protocol.AgentMsg
+	1,  // 10: protocol.PingveService.Connect:output_type -> protocol.ServerMsg
+	10, // [10:11] is the sub-list for method output_type
+	9,  // [9:10] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_pkg_protocol_pingve_proto_init() }
@@ -990,6 +1066,7 @@ func file_pkg_protocol_pingve_proto_init() {
 		(*ServerMsg_Auth)(nil),
 		(*ServerMsg_PingTask)(nil),
 		(*ServerMsg_MtrTask)(nil),
+		(*ServerMsg_CancelTask)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -997,7 +1074,7 @@ func file_pkg_protocol_pingve_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_protocol_pingve_proto_rawDesc), len(file_pkg_protocol_pingve_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
