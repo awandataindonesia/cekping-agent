@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"context"
 	"log"
 	"math"
 	"net"
@@ -17,7 +18,7 @@ type PingStats struct {
 	Rtts                  []float64
 }
 
-func DoPing(target string, count int, onPacket func(seq, ttl int, rtt float64)) (*PingStats, error) {
+func DoPing(ctx context.Context, target string, count int, onPacket func(seq, ttl int, rtt float64)) (*PingStats, error) {
 	// 1. Resolve Target
 	dst, err := net.ResolveIPAddr("ip4", target)
 	if err != nil {
@@ -44,6 +45,11 @@ func DoPing(target string, count int, onPacket func(seq, ttl int, rtt float64)) 
 	timeout := 1 * time.Second
 
 	for seq := 1; seq <= count; seq++ {
+		select {
+		case <-ctx.Done():
+			return stats, ctx.Err()
+		default:
+		}
 		// Construct Message
 		wm := icmp.Message{
 			Type: ipv4.ICMPTypeEcho, Code: 0,
@@ -154,7 +160,7 @@ type MTRHopStats struct {
 	Rtts    []float64
 }
 
-func DoMTR(target string, onHop func(MTRHopStats)) error {
+func DoMTR(ctx context.Context, target string, onHop func(MTRHopStats)) error {
 	// 1. Resolve Target
 	dst, err := net.ResolveIPAddr("ip4", target)
 	if err != nil {
@@ -187,6 +193,11 @@ func DoMTR(target string, onHop func(MTRHopStats)) error {
 
 	for seq := 1; seq <= cycles; seq++ {
 		for ttl := 1; ttl <= maxHops; ttl++ {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
 			if ttl > maxDiscoveredHop {
 				break
 			}

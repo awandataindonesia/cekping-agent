@@ -18,11 +18,16 @@ import (
 )
 
 type Worker struct {
-	cfg *config.Config
+	cfg         *config.Config
+	activeTasks map[string]context.CancelFunc
+	tasksMu     sync.Mutex
 }
 
 func NewWorker(cfg *config.Config) *Worker {
-	return &Worker{cfg: cfg}
+	return &Worker{
+		cfg:         cfg,
+		activeTasks: make(map[string]context.CancelFunc),
+	}
 }
 
 func (w *Worker) Start() {
@@ -146,7 +151,26 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 	case *protocol.ServerMsg_PingTask:
 		task := payload.PingTask
 		log.Printf("Received Ping Task: %s", task.Target)
-		finalStats, err := executor.DoPing(task.Target, int(task.Count), func(seq, ttl int, rtt float64) {
+
+		// Cancel existing task for this target if any
+		w.tasksMu.Lock()
+		if cancel, exists := w.activeTasks[task.Target]; exists {
+			log.Printf("Cancelling previous task for target: %s", task.Target)
+			cancel()
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		w.activeTasks[task.Target] = cancel
+		w.tasksMu.Unlock()
+
+		defer func() {
+			w.tasksMu.Lock()
+			if _, exists := w.activeTasks[task.Target]; exists {
+				delete(w.activeTasks, task.Target)
+			}
+			w.tasksMu.Unlock()
+		}()
+
+		finalStats, err := executor.DoPing(ctx, task.Target, int(task.Count), func(seq, ttl int, rtt float64) {
 			// Stream result per packet
 			_ = stream.Send(&protocol.AgentMsg{
 				Payload: &protocol.AgentMsg_PingResult{
@@ -189,7 +213,23 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 		task := payload.MtrTask
 		log.Printf("Received MTR Task: %s", task.Target)
 
-		err := executor.DoMTR(task.Target, func(stats executor.MTRHopStats) {
+		// Cancel existing task for this target if any
+		w.tasksMu.Lock()
+		if cancel, exists := w.activeTasks[task.Target]; exists {
+			log.Printf("Cancelling previous task for target: %s", task.Target)
+			cancel()
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		w.activeTasks[task.Target] = cancel
+		w.tasksMu.Unlock()
+
+		defer func() {
+			w.tasksMu.Lock()
+			delete(w.activeTasks, task.Target)
+			w.tasksMu.Unlock()
+		}()
+
+		err := executor.DoMTR(ctx, task.Target, func(stats executor.MTRHopStats) {
 			_ = stream.Send(&protocol.AgentMsg{
 				Payload: &protocol.AgentMsg_MtrResult{
 					MtrResult: &protocol.MTRResult{
