@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"log"
 	"math"
 	"net"
 	"os"
@@ -206,13 +207,16 @@ func DoMTR(target string, onHop func(MTRHopStats)) error {
 			// Set TTL
 			pConn := c.IPv4PacketConn()
 			if pConn != nil {
-				pConn.SetTTL(ttl)
+				if err := pConn.SetTTL(ttl); err != nil {
+					log.Printf("MTR Error setting TTL: %v", err)
+				}
 			}
 
 			// Send
 			start := time.Now()
 			if _, err := c.WriteTo(wb, dst); err != nil {
-				continue
+				log.Printf("MTR WriteTo Error to %s: %v", target, err)
+				return err
 			}
 
 			// Update Sent count
@@ -309,8 +313,9 @@ func DoMTR(target string, onHop func(MTRHopStats)) error {
 			// Recalculate Loss based on Sent vs Received
 			h.Loss = float64(h.Sent-len(h.Rtts)) / float64(h.Sent) * 100
 
-			// Always trigger onHop so UI gets the timeout/RTO update
-			onHop(*h)
+			if h.IP != "" || h.Sent >= 3 {
+				onHop(*h)
+			}
 		}
 
 		// Wait a bit between cycles?
