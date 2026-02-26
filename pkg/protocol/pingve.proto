@@ -22,7 +22,13 @@ message ServerMsg {
     AuthResponse auth = 1;
     PingTask ping_task = 2;
     MTRTask mtr_task = 3;
+    CancelTask cancel_task = 4;
   }
+}
+
+message CancelTask {
+  string id = 1;
+  string target = 2;
 }
 
 message AuthRequest {

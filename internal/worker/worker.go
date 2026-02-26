@@ -164,9 +164,7 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 
 		defer func() {
 			w.tasksMu.Lock()
-			if _, exists := w.activeTasks[task.Target]; exists {
-				delete(w.activeTasks, task.Target)
-			}
+			delete(w.activeTasks, task.Target)
 			w.tasksMu.Unlock()
 		}()
 
