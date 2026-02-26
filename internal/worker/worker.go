@@ -26,7 +26,6 @@ func NewWorker(cfg *config.Config) *Worker {
 }
 
 func (w *Worker) Start() {
-	log.Printf("PingVe Agent v1.0.3 starting (ThreadSafeStream + ID Fix enabled)...")
 	backoff := 1 * time.Second
 	for {
 		log.Printf("Connecting to server at %s...", w.cfg.ServerAddr)
