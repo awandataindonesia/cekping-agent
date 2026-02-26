@@ -38,8 +38,8 @@ func DoPing(target string, count int, onPacket func(seq, ttl int, rtt float64)) 
 	sent := 0
 	received := 0
 
-	// Unique ID different from MTR to avoid collision
-	id := (os.Getpid() & 0xffff) + int(time.Now().UnixNano()&0xffff) + 1
+	// Unique ID masked to 16 bits (0-65535) to match ICMP spec
+	id := ((os.Getpid() & 0x7fff) + int(time.Now().UnixNano()&0x7fff)) & 0xffff
 	timeout := 1 * time.Second
 
 	for seq := 1; seq <= count; seq++ {
@@ -180,7 +180,8 @@ func DoMTR(target string, onHop func(MTRHopStats)) error {
 	}
 
 	// 4. Run Cycles
-	id := (os.Getpid() & 0xffff) + int(time.Now().UnixNano()&0xffff)
+	// Unique ID masked to 16 bits
+	id := ((os.Getpid() & 0x7fff) + int(time.Now().UnixNano()&0x7fff)) & 0xffff
 	maxDiscoveredHop := maxHops
 
 	for seq := 1; seq <= cycles; seq++ {
