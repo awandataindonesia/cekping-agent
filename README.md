@@ -38,6 +38,7 @@ Mirip dengan environment Docker, namun khusus untuk ekosistem Podman (terutama i
 podman run -d \
   --name cekping-agent \
   --network host \
+  --pull always \
   --cap-add=NET_RAW \
   --env PINGVE_SERVER=cekping.id:50051 \
   --env PINGVE_TOKEN="TOKEN_ANDA" \
