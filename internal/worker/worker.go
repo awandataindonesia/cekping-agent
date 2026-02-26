@@ -26,7 +26,6 @@ func NewWorker(cfg *config.Config) *Worker {
 }
 
 func (w *Worker) Start() {
-	log.Printf("PingVe Agent v1.0.3 starting (ThreadSafeStream + ID Fix enabled)...")
 	backoff := 1 * time.Second
 	for {
 		log.Printf("Connecting to server at %s...", w.cfg.ServerAddr)
@@ -213,6 +212,17 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 
 		if err != nil {
 			log.Printf("MTR error: %v", err)
+			// Send Error Summary
+			_ = stream.Send(&protocol.AgentMsg{
+				Payload: &protocol.AgentMsg_MtrResult{
+					MtrResult: &protocol.MTRResult{
+						TaskId:    task.Id,
+						Target:    task.Target,
+						RawOutput: err.Error(),
+						IsFinal:   true,
+					},
+				},
+			})
 			return
 		}
 

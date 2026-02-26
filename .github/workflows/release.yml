@@ -42,15 +42,15 @@ jobs:
       - name: Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
-          name: ${{ github.ref_name == 'main' && 'Latest Development Build' || github.ref_name }}
+          tag_name: ${{ github.ref_name == 'main' && format('v1.1.{0}', github.run_number) || github.ref_name }}
+          name: ${{ github.ref_name == 'main' && format('PingVe Agent v1.1.{0}', github.run_number) || github.ref_name }}
           files: |
             dist/pingve-agent-linux-amd64
             dist/pingve-agent-linux-arm64
           generate_release_notes: true
           draft: false
-          prerelease: ${{ github.ref_name == 'main' }}
-          make_latest: ${{ github.ref_name == 'main' && 'true' || 'false' }}
+          prerelease: false
+          make_latest: true
 
   build-docker:
     name: Build & Push Docker Image
