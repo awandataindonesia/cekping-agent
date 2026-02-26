@@ -26,6 +26,8 @@ func NewWorker(cfg *config.Config) *Worker {
 }
 
 func (w *Worker) Start() {
+	hostname, _ := os.Hostname()
+	log.Printf("PingVe Agent v1.1.0 starting... (PID: %d, Host: %s)", os.Getpid(), hostname)
 	backoff := 1 * time.Second
 	for {
 		log.Printf("Connecting to server at %s...", w.cfg.ServerAddr)
