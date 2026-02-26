@@ -18,15 +18,17 @@ import (
 )
 
 type Worker struct {
-	cfg         *config.Config
-	activeTasks map[string]context.CancelFunc
-	tasksMu     sync.Mutex
+	cfg          *config.Config
+	activeTasks  map[string]context.CancelFunc
+	targetToTask map[string]string
+	tasksMu      sync.Mutex
 }
 
 func NewWorker(cfg *config.Config) *Worker {
 	return &Worker{
-		cfg:         cfg,
-		activeTasks: make(map[string]context.CancelFunc),
+		cfg:          cfg,
+		activeTasks:  make(map[string]context.CancelFunc),
+		targetToTask: make(map[string]string),
 	}
 }
 
@@ -150,26 +152,35 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 	switch payload := msg.Payload.(type) {
 	case *protocol.ServerMsg_PingTask:
 		task := payload.PingTask
-		log.Printf("Received Ping Task: %s", task.Target)
+		log.Printf("Received Ping Task: %s (ID: %s)", task.Target, task.Id)
 
-		// Cancel existing task for this target if any
+		targetKey := "ping:" + task.Target
+
 		w.tasksMu.Lock()
-		if cancel, exists := w.activeTasks[task.Target]; exists {
-			log.Printf("Cancelling previous task for target: %s", task.Target)
-			cancel()
+		// Cancel existing ping for this target
+		if oldID, exists := w.targetToTask[targetKey]; exists {
+			if cancel, ok := w.activeTasks[oldID]; ok {
+				log.Printf("Cancelling previous ping for target %s (ID: %s)", task.Target, oldID)
+				cancel()
+				delete(w.activeTasks, oldID)
+			}
 		}
+
 		ctx, cancel := context.WithCancel(context.Background())
-		w.activeTasks[task.Target] = cancel
+		w.activeTasks[task.Id] = cancel
+		w.targetToTask[targetKey] = task.Id
 		w.tasksMu.Unlock()
 
 		defer func() {
 			w.tasksMu.Lock()
-			delete(w.activeTasks, task.Target)
+			if currID, ok := w.targetToTask[targetKey]; ok && currID == task.Id {
+				delete(w.targetToTask, targetKey)
+			}
+			delete(w.activeTasks, task.Id)
 			w.tasksMu.Unlock()
 		}()
 
 		finalStats, err := executor.DoPing(ctx, task.Target, int(task.Count), func(seq, ttl int, rtt float64) {
-			// Stream result per packet
 			_ = stream.Send(&protocol.AgentMsg{
 				Payload: &protocol.AgentMsg_PingResult{
 					PingResult: &protocol.PingResult{
@@ -189,7 +200,6 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 		}
 
 		if finalStats != nil {
-			// Send Final Summary
 			_ = stream.Send(&protocol.AgentMsg{
 				Payload: &protocol.AgentMsg_PingResult{
 					PingResult: &protocol.PingResult{
@@ -209,21 +219,31 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 
 	case *protocol.ServerMsg_MtrTask:
 		task := payload.MtrTask
-		log.Printf("Received MTR Task: %s", task.Target)
+		log.Printf("Received MTR Task: %s (ID: %s)", task.Target, task.Id)
 
-		// Cancel existing task for this target if any
+		targetKey := "mtr:" + task.Target
+
 		w.tasksMu.Lock()
-		if cancel, exists := w.activeTasks[task.Target]; exists {
-			log.Printf("Cancelling previous task for target: %s", task.Target)
-			cancel()
+		// Cancel existing MTR for this target
+		if oldID, exists := w.targetToTask[targetKey]; exists {
+			if cancel, ok := w.activeTasks[oldID]; ok {
+				log.Printf("Cancelling previous mtr for target %s (ID: %s)", task.Target, oldID)
+				cancel()
+				delete(w.activeTasks, oldID)
+			}
 		}
+
 		ctx, cancel := context.WithCancel(context.Background())
-		w.activeTasks[task.Target] = cancel
+		w.activeTasks[task.Id] = cancel
+		w.targetToTask[targetKey] = task.Id
 		w.tasksMu.Unlock()
 
 		defer func() {
 			w.tasksMu.Lock()
-			delete(w.activeTasks, task.Target)
+			if currID, ok := w.targetToTask[targetKey]; ok && currID == task.Id {
+				delete(w.targetToTask, targetKey)
+			}
+			delete(w.activeTasks, task.Id)
 			w.tasksMu.Unlock()
 		}()
 
@@ -252,7 +272,6 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 
 		if err != nil {
 			log.Printf("MTR error: %v", err)
-			// Send Error Summary
 			_ = stream.Send(&protocol.AgentMsg{
 				Payload: &protocol.AgentMsg_MtrResult{
 					MtrResult: &protocol.MTRResult{
@@ -266,7 +285,6 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 			return
 		}
 
-		// Send Final Confirmation
 		_ = stream.Send(&protocol.AgentMsg{
 			Payload: &protocol.AgentMsg_MtrResult{
 				MtrResult: &protocol.MTRResult{
@@ -277,5 +295,15 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 			},
 		})
 
+	case *protocol.ServerMsg_CancelTask:
+		task := payload.CancelTask
+		log.Printf("Received Cancel Request for Task ID: %s", task.Id)
+		w.tasksMu.Lock()
+		if cancel, ok := w.activeTasks[task.Id]; ok {
+			log.Printf("Executing cancellation for Task ID: %s", task.Id)
+			cancel()
+			delete(w.activeTasks, task.Id)
+		}
+		w.tasksMu.Unlock()
 	}
 }
