@@ -247,7 +247,7 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 			w.tasksMu.Unlock()
 		}()
 
-		err := executor.DoMTR(ctx, task.Target, func(stats executor.MTRHopStats) {
+		err := executor.DoMTR(ctx, task.Target, int(task.Count), func(stats executor.MTRHopStats) {
 			_ = stream.Send(&protocol.AgentMsg{
 				Payload: &protocol.AgentMsg_MtrResult{
 					MtrResult: &protocol.MTRResult{

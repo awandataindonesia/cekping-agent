@@ -160,7 +160,7 @@ type MTRHopStats struct {
 	Rtts    []float64
 }
 
-func DoMTR(ctx context.Context, target string, onHop func(MTRHopStats)) error {
+func DoMTR(ctx context.Context, target string, count int, onHop func(MTRHopStats)) error {
 	// 1. Resolve Target
 	dst, err := net.ResolveIPAddr("ip4", target)
 	if err != nil {
@@ -176,7 +176,10 @@ func DoMTR(ctx context.Context, target string, onHop func(MTRHopStats)) error {
 
 	// 3. MTR Configuration
 	const maxHops = 30
-	const cycles = 20 // Default count
+	cycles := count
+	if cycles <= 0 {
+		cycles = 20 // Fallback
+	}
 	timeout := 1 * time.Second
 
 	// State
