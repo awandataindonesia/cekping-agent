@@ -154,28 +154,13 @@ func (w *Worker) handleMessage(stream *ThreadSafeStream, msg *protocol.ServerMsg
 		task := payload.PingTask
 		log.Printf("Received Ping Task: %s (ID: %s)", task.Target, task.Id)
 
-		targetKey := "ping:" + task.Target
-
-		w.tasksMu.Lock()
-		// Cancel existing ping for this target
-		if oldID, exists := w.targetToTask[targetKey]; exists {
-			if cancel, ok := w.activeTasks[oldID]; ok {
-				log.Printf("Cancelling previous ping for target %s (ID: %s)", task.Target, oldID)
-				cancel()
-				delete(w.activeTasks, oldID)
-			}
-		}
-
 		ctx, cancel := context.WithCancel(context.Background())
+		w.tasksMu.Lock()
 		w.activeTasks[task.Id] = cancel
-		w.targetToTask[targetKey] = task.Id
 		w.tasksMu.Unlock()
 
 		defer func() {
 			w.tasksMu.Lock()
-			if currID, ok := w.targetToTask[targetKey]; ok && currID == task.Id {
-				delete(w.targetToTask, targetKey)
-			}
 			delete(w.activeTasks, task.Id)
 			w.tasksMu.Unlock()
 		}()
