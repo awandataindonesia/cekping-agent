@@ -5,12 +5,14 @@ import (
 	"log"
 	"math"
 	"net"
-	"os"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
 )
+
+var icmpIDCounter uint32 = uint32(time.Now().UnixNano() & 0xffff)
 
 type PingStats struct {
 	Min, Max, Avg, StdDev float64
@@ -40,8 +42,8 @@ func DoPing(ctx context.Context, target string, count int, onPacket func(seq, tt
 	sent := 0
 	received := 0
 
-	// Unique ID masked to 16 bits (0-65535) to match ICMP spec
-	id := ((os.Getpid() & 0x7fff) + int(time.Now().UnixNano()&0x7fff)) & 0xffff
+	// 100% unique ID per concurrent task via atomic counter (masked to 16 bits)
+	id := int(atomic.AddUint32(&icmpIDCounter, 1)) & 0xffff
 	timeout := 1 * time.Second
 
 	for seq := 1; seq <= count; seq++ {
@@ -190,8 +192,8 @@ func DoMTR(ctx context.Context, target string, count int, onHop func(MTRHopStats
 	}
 
 	// 4. Run Cycles
-	// Unique ID masked to 16 bits
-	id := ((os.Getpid() & 0x7fff) + int(time.Now().UnixNano()&0x7fff)) & 0xffff
+	// 100% unique ID per concurrent task via atomic counter (masked to 16 bits)
+	id := int(atomic.AddUint32(&icmpIDCounter, 1)) & 0xffff
 	maxDiscoveredHop := maxHops
 
 	for seq := 1; seq <= cycles; seq++ {
