@@ -28,8 +28,8 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /app/pingve-agent .
 
 # Default Envs
-ENV PINGVE_SERVER=""
-ENV PINGVE_TOKEN=""
+ENV CEKPING_SERVER=""
+ENV CEKPING_TOKEN=""
 
 # Entrypoint
 ENTRYPOINT ["./pingve-agent"]

@@ -25,9 +25,9 @@ docker run -d \
   --network host \
   --pull always \
   --restart always \
-  --env PINGVE_SERVER=cekping.id:50051 \
-  --env PINGVE_TOKEN="TOKEN_ASLI_ANDA_DISINI" \
-  --env PINGVE_SECURE=true \
+  --env CEKPING_SERVER=cekping.id:50051 \
+  --env CEKPING_TOKEN="TOKEN_ASLI_ANDA_DISINI" \
+  --env CEKPING_SECURE=true \
   ghcr.io/awandataindonesia/cekping-agent:latest
 ```
 
@@ -40,9 +40,9 @@ podman run -d \
   --network host \
   --pull always \
   --cap-add=NET_RAW \
-  --env PINGVE_SERVER=cekping.id:50051 \
-  --env PINGVE_TOKEN="TOKEN_ANDA" \
-  --env PINGVE_SECURE=true \
+  --env CEKPING_SERVER=cekping.id:50051 \
+  --env CEKPING_TOKEN="TOKEN_ANDA" \
+  --env CEKPING_SECURE=true \
   ghcr.io/awandataindonesia/cekping-agent:latest
 ```
 
