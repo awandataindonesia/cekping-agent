@@ -12,16 +12,16 @@ import (
 )
 
 const serviceTemplate = `[Unit]
-Description=PingVe Agent
+Description=CekPing Agent
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/pingve-agent
+ExecStart=/usr/local/bin/cekping-agent
 Restart=always
 User=root
-Environment=AGENT_TOKEN={{TOKEN}}
-Environment=SERVER_ADDR={{SERVER}}
-Environment=AGENT_HOSTNAME={{HOSTNAME}}
+Environment=CEKPING_TOKEN={{TOKEN}}
+Environment=CEKPING_SERVER={{SERVER}}
+Environment=CEKPING_SECURE={{SECURE}}
 
 [Install]
 WantedBy=multi-user.target
@@ -32,26 +32,26 @@ func main() {
 	install := flag.Bool("install", false, "Install the agent as a systemd service")
 	token := flag.String("token", "", "Agent Token (required for install)")
 	server := flag.String("server", "localhost:50051", "Server Address (for install)")
-	hostName := flag.String("host", "", "Hostname (optional for install)")
+	secure := flag.Bool("secure", false, "Use secure connection (for install)")
 	flag.Parse()
 
 	if *install {
-		runInstall(*token, *server, *hostName)
+		runInstall(*token, *server, *secure)
 		return
 	}
 
-	log.Println("Starting PingVe Agent...")
+	log.Println("Starting CekPing Agent...")
 	cfg := config.LoadConfig()
 
 	if cfg.ServerAddr == "" || cfg.Token == "" {
-		log.Fatal("Error: CEKPING_SERVER and PINGVE_TOKEN environment variables are required.")
+		log.Fatal("Error: CEKPING_SERVER and CEKPING_TOKEN environment variables are required.")
 	}
 
 	w := worker.NewWorker(cfg)
 	w.Start()
 }
 
-func runInstall(token, server, hostArg string) {
+func runInstall(token, server string, secure bool) {
 	if token == "" {
 		log.Fatal("Error: -token is required for installation")
 	}
@@ -61,8 +61,8 @@ func runInstall(token, server, hostArg string) {
 		log.Fatal("Error: Installation requires root privileges (sudo)")
 	}
 
-	binPath := "/usr/local/bin/pingve-agent"
-	servicePath := "/etc/systemd/system/pingve-agent.service"
+	binPath := "/usr/local/bin/cekping-agent"
+	servicePath := "/etc/systemd/system/cekping-agent.service"
 
 	// 1. Copy Binary
 	log.Printf("Installing binary to %s...", binPath)
@@ -72,7 +72,7 @@ func runInstall(token, server, hostArg string) {
 	}
 
 	// Stop service first if running
-	_ = exec.Command("systemctl", "stop", "pingve-agent").Run()
+	_ = exec.Command("systemctl", "stop", "cekping-agent").Run()
 
 	input, err := os.ReadFile(selfPath)
 	if err != nil {
@@ -84,14 +84,15 @@ func runInstall(token, server, hostArg string) {
 
 	// 2. Create Service File
 	log.Println("Creating systemd service...")
-	finalHost := hostArg
-	if finalHost == "" {
-		finalHost, _ = os.Hostname()
+
+	secureStr := "false"
+	if secure {
+		secureStr = "true"
 	}
 
 	content := strings.ReplaceAll(serviceTemplate, "{{TOKEN}}", token)
 	content = strings.ReplaceAll(content, "{{SERVER}}", server)
-	content = strings.ReplaceAll(content, "{{HOSTNAME}}", finalHost)
+	content = strings.ReplaceAll(content, "{{SECURE}}", secureStr)
 
 	if err := os.WriteFile(servicePath, []byte(content), 0644); err != nil {
 		log.Fatalf("Failed to create service file: %v", err)
@@ -102,9 +103,9 @@ func runInstall(token, server, hostArg string) {
 	if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
 		log.Fatalf("Daemon reload failed: %v", err)
 	}
-	if err := exec.Command("systemctl", "enable", "--now", "pingve-agent").Run(); err != nil {
+	if err := exec.Command("systemctl", "enable", "--now", "cekping-agent").Run(); err != nil {
 		log.Fatalf("Failed to enable service: %v", err)
 	}
 
-	log.Println("Installation Successful! Service 'pingve-agent' is running.")
+	log.Println("Installation Successful! Service 'cekping-agent' is running.")
 }

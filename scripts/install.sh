@@ -49,37 +49,37 @@ else
     exit 1
 fi
 
-BINARY_NAME="pingve-agent-${OS}-${ARCH}"
+BINARY_NAME="cekping-agent-${OS}-${ARCH}"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/${VERSION}/download/${BINARY_NAME}"
 if [ "$VERSION" == "latest" ]; then
     DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY_NAME}"
 fi
 
 # Stop existing service if running
-if systemctl is-active --quiet pingve-agent; then
-    echo "Stopping existing PingVe Agent service..."
-    systemctl stop pingve-agent
+if systemctl is-active --quiet cekping-agent; then
+    echo "Stopping existing CekPing Agent service..."
+    systemctl stop cekping-agent
 fi
 
 echo "Downloading CekPing Agent from $DOWNLOAD_URL..."
-if ! curl -f -L -o /usr/local/bin/pingve-agent "$DOWNLOAD_URL"; then
+if ! curl -f -L -o /usr/local/bin/cekping-agent "$DOWNLOAD_URL"; then
     echo "Error: Failed to download agent binary from $DOWNLOAD_URL"
     echo "Please ensure the version '$VERSION' exists and assets are uploaded."
     exit 1
 fi
-chmod +x /usr/local/bin/pingve-agent
+chmod +x /usr/local/bin/cekping-agent
 
 # Create Systemd Service
 echo "Creating systemd service..."
-cat <<EOF > /etc/systemd/system/pingve-agent.service
+cat <<EOF > /etc/systemd/system/cekping-agent.service
 [Unit]
-Description=PingVe Agent
+Description=CekPing Agent
 After=network.target
 
 [Service]
-ExecStartPre=/usr/bin/curl -f -s -L -o /usr/local/bin/pingve-agent "${DOWNLOAD_URL}"
-ExecStartPre=/bin/chmod +x /usr/local/bin/pingve-agent
-ExecStart=/usr/local/bin/pingve-agent
+ExecStartPre=/usr/bin/curl -f -s -L -o /usr/local/bin/cekping-agent "${DOWNLOAD_URL}"
+ExecStartPre=/bin/chmod +x /usr/local/bin/cekping-agent
+ExecStart=/usr/local/bin/cekping-agent
 Restart=always
 User=root
 Environment=CEKPING_TOKEN=${TOKEN}
@@ -92,7 +92,7 @@ EOF
 
 # Reload and Start
 systemctl daemon-reload
-systemctl enable --now pingve-agent
+systemctl enable --now cekping-agent
 
 echo "CekPing Agent installed and started successfully!"
 echo "Connected to: $SERVER_ADDR"
