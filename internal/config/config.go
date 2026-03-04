@@ -11,9 +11,9 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	addr := os.Getenv("PINGVE_SERVER")
-	token := os.Getenv("PINGVE_TOKEN")
-	secure := os.Getenv("PINGVE_SECURE") == "true"
+	addr := os.Getenv("CEKPING_SERVER")
+	token := os.Getenv("CEKPING_TOKEN")
+	secure := os.Getenv("CEKPING_SECURE") == "true"
 
 	return &Config{
 		ServerAddr: addr,

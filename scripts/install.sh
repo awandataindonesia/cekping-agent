@@ -82,9 +82,9 @@ ExecStartPre=/bin/chmod +x /usr/local/bin/pingve-agent
 ExecStart=/usr/local/bin/pingve-agent
 Restart=always
 User=root
-Environment=PINGVE_TOKEN=${TOKEN}
-Environment=PINGVE_SERVER=${SERVER_ADDR}
-Environment=PINGVE_SECURE=${SECURE}
+Environment=CEKPING_TOKEN=${TOKEN}
+Environment=CEKPING_SERVER=${SERVER_ADDR}
+Environment=CEKPING_SECURE=${SECURE}
 
 [Install]
 WantedBy=multi-user.target
