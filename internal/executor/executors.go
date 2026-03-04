@@ -57,7 +57,7 @@ func DoPing(ctx context.Context, target string, count int, onPacket func(seq, tt
 			Type: ipv4.ICMPTypeEcho, Code: 0,
 			Body: &icmp.Echo{
 				ID: id, Seq: seq,
-				Data: []byte("PingVe-Ping"),
+				Data: []byte("Cekping-Ping"),
 			},
 		}
 		wb, err := wm.Marshal(nil)
@@ -212,7 +212,7 @@ func DoMTR(ctx context.Context, target string, count int, onHop func(MTRHopStats
 				Type: ipv4.ICMPTypeEcho, Code: 0,
 				Body: &icmp.Echo{
 					ID: id, Seq: (seq << 8) | ttl, // Encode cycle & ttl in seq? Or just use global seq
-					Data: []byte("PingVe-MTR"),
+					Data: []byte("Cekping-MTR"),
 				},
 			}
 			wb, err := wm.Marshal(nil)

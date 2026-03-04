@@ -14,7 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build Binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o pingve-agent ./cmd/agent
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o cekping-agent ./cmd/agent
 
 # Runtime Stage
 FROM alpine:latest
@@ -25,11 +25,11 @@ WORKDIR /app
 RUN apk --no-cache add ca-certificates
 
 # Copy binary from builder
-COPY --from=builder /app/pingve-agent .
+COPY --from=builder /app/cekping-agent .
 
 # Default Envs
 ENV CEKPING_SERVER=""
 ENV CEKPING_TOKEN=""
 
 # Entrypoint
-ENTRYPOINT ["./pingve-agent"]
+ENTRYPOINT ["./cekping-agent"]
