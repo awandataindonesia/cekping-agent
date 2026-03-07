@@ -5,7 +5,7 @@ on:
     tags:
       - 'v*'
     branches:
-      - main
+      - feature/build-arm64-container
 
 env:
   REGISTRY: ghcr.io
