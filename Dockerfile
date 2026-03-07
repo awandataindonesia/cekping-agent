@@ -1,5 +1,7 @@
-# Build Stage
-FROM golang:1.24-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
 
@@ -14,7 +16,7 @@ RUN go mod download
 COPY . .
 
 # Build Binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o cekping-agent ./cmd/agent
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=$TARGETARCH go build -ldflags="-s -w" -o cekping-agent ./cmd/agent
 
 # Runtime Stage
 FROM alpine:latest
