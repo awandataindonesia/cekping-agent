@@ -1,24 +1,3 @@
-FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
-
-ARG TARGETOS
-ARG TARGETARCH
-
-WORKDIR /app
-
-# Install git for go mod download
-RUN apk add --no-cache git
-
-# Copy gomod
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy source
-COPY . .
-
-# Build Binary
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=$TARGETARCH go build -ldflags="-s -w" -o cekping-agent ./cmd/agent
-
-# Runtime Stage
 FROM alpine:latest
 
 WORKDIR /app
@@ -26,8 +5,13 @@ WORKDIR /app
 # Install CA Certs for HTTPS
 RUN apk --no-cache add ca-certificates
 
-# Copy binary from builder
-COPY --from=builder /app/cekping-agent .
+# We use the pre-built binaries from the build-binaries job
+# TARGETARCH is automatically provided by Docker Buildx (amd64, arm64, etc.)
+ARG TARGETARCH
+COPY dist/cekping-agent-linux-${TARGETARCH} ./cekping-agent
+
+# Ensure the binary is executable
+RUN chmod +x ./cekping-agent
 
 # Default Envs
 ENV CEKPING_SERVER=""
