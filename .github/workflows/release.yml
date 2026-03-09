@@ -6,6 +6,7 @@ on:
       - 'v*'
     branches:
       - main
+      - staging
 
 env:
   REGISTRY: ghcr.io
@@ -15,6 +16,7 @@ jobs:
   build-binaries:
     name: Build & Release Binaries
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     permissions:
       contents: write
     steps:
@@ -55,6 +57,7 @@ jobs:
   build-docker:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     permissions:
       contents: read
       packages: write
