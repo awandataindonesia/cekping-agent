@@ -6,6 +6,7 @@ on:
       - 'v*'
     branches:
       - main
+      - staging
 
 env:
   REGISTRY: ghcr.io
@@ -15,6 +16,7 @@ jobs:
   build-binaries:
     name: Build & Release Binaries
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     permissions:
       contents: write
     steps:
@@ -49,12 +51,13 @@ jobs:
             dist/cekping-agent-linux-arm64
           generate_release_notes: true
           draft: false
-          prerelease: false
-          make_latest: true
+          prerelease: ${{ github.ref_name != 'main' }}
+          make_latest: ${{ github.ref_name == 'main' }}
 
   build-docker:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     permissions:
       contents: read
       packages: write
@@ -78,6 +81,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=staging,enable=${{ github.ref_name == 'staging' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
