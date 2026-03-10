@@ -56,7 +56,7 @@ else
 fi
 
 BINARY_NAME="cekping-agent-${OS}-${ARCH}"
-DOWNLOAD_URL="https://github.com/${REPO}/releases/${VERSION}/download/${BINARY_NAME}"
+DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${BINARY_NAME}"
 if [ "$VERSION" == "latest" ]; then
     DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY_NAME}"
 fi
