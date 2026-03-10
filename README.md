@@ -52,7 +52,22 @@ Jika tidak ingin menggunakan container, Anda dapat menggunakan script instalasi 
 ```bash
 curl -sL https://raw.githubusercontent.com/awandataindonesia/cekping-agent/main/scripts/install.sh | sudo bash -s -- \
   -t "TOKEN_ANDA" \
-  -s "cekping.id:50051" -S 
+  -s "cekping.id:50051" -S
 ```
 
 Script ini secara otomatis akan mengatur *environment variables* yang dibutuhkan dan menjalankan agen di background.
+
+#### D. FreeBSD (rc.d Service)
+Untuk pengguna FreeBSD, script instalasi akan mengunduh binary dan mengkonfigurasi *rc.d service*:
+
+```bash
+curl -sL https://raw.githubusercontent.com/awandataindonesia/cekping-agent/main/scripts/install.sh | sudo bash -s -- \
+  -t "TOKEN_ANDA" \
+  -s "cekping.id:50051" -S
+```
+
+**Service Management (FreeBSD):**
+```bash
+service cekping-agent start|stop|restart|status
+sysrc cekping_agent_enable=YES|NO
+```

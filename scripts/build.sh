@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Build for various architectures
 echo "Building for Linux (amd64)..."
