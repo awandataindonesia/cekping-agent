@@ -44,6 +44,12 @@ jobs:
           path: dist/*
           retention-days: 5
 
+      - name: Delete old staging release
+        if: github.ref_name == 'staging'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release delete staging --cleanup-tag -y || true
+
       - name: Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
