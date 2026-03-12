@@ -1,21 +1,3 @@
-# Build Stage
-FROM golang:1.24-alpine AS builder
-
-WORKDIR /app
-
-# Install git for go mod download
-RUN apk add --no-cache git
-
-# Copy gomod
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy source
-COPY . .
-
-# Build Binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o cekping-agent ./cmd/agent
-
 # Runtime Stage
 FROM alpine:latest
 
@@ -24,8 +6,12 @@ WORKDIR /app
 # Install CA Certs for HTTPS
 RUN apk --no-cache add ca-certificates
 
-# Copy binary from builder
-COPY --from=builder /app/cekping-agent .
+# Copy pre-built binary based on architecture
+ARG TARGETARCH
+COPY dist/cekping-agent-linux-${TARGETARCH} ./cekping-agent
+
+# Ensure the binary is executable
+RUN chmod +x ./cekping-agent
 
 # Default Envs
 ENV CEKPING_SERVER=""
