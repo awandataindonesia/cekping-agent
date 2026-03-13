@@ -68,6 +68,6 @@ curl -sL https://raw.githubusercontent.com/awandataindonesia/cekping-agent/main/
 
 **Service Management (FreeBSD):**
 ```bash
-service cekping-agent start|stop|restart|status
-sysrc cekping_agent_enable=YES|NO
+sudo service cekping-agent start|stop|restart|status
+sudo sysrc cekping_agent_enable=YES|NO
 ```
