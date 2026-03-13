@@ -3,7 +3,7 @@
 Agen pemantauan jaringan ringan (Lightweight Network Monitoring Agent) untuk menjalankan instruksi Ping & MTR.
 
 ## Persyaratan Sistem
-- **Sistem Operasi**: Linux (Server/Desktop) atau macOS.
+- **Sistem Operasi**: Linux, FreeBSD (Server/Desktop) atau macOS.
 - **Jaringan**: Koneksi internet yang stabil.
 - **Hak Akses**: Akses **Root / Sudo** wajib diperlukan karena agen menggunakan *Raw Socket* untuk melakukan eksekusi ICMP Ping yang akurat.
 
@@ -52,7 +52,22 @@ Jika tidak ingin menggunakan container, Anda dapat menggunakan script instalasi 
 ```bash
 curl -sL https://raw.githubusercontent.com/awandataindonesia/cekping-agent/main/scripts/install.sh | sudo bash -s -- \
   -t "TOKEN_ANDA" \
-  -s "cekping.id:50051" -S 
+  -s "cekping.id:50051" -S
 ```
 
 Script ini secara otomatis akan mengatur *environment variables* yang dibutuhkan dan menjalankan agen di background.
+
+#### D. FreeBSD (rc.d Service)
+Untuk pengguna FreeBSD, script instalasi akan mengunduh binary dan mengkonfigurasi *rc.d service*:
+
+```bash
+curl -sL https://raw.githubusercontent.com/awandataindonesia/cekping-agent/main/scripts/install.sh | sudo bash -s -- \
+  -t "TOKEN_ANDA" \
+  -s "cekping.id:50051" -S
+```
+
+**Service Management (FreeBSD):**
+```bash
+sudo service cekping-agent start|stop|restart|status
+sudo sysrc cekping_agent_enable=YES|NO
+```
