@@ -187,5 +187,5 @@ fi
 
 echo ""
 echo "Service management:"
-echo "  service cekping-agent start|stop|restart|status"
-echo "  sysrc cekping_agent_enable=YES|NO"
+echo "  sudo service cekping-agent start|stop|restart|status"
+echo "  sudo sysrc cekping_agent_enable=YES|NO"
