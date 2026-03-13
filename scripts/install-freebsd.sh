@@ -10,8 +10,10 @@ REPO="awandataindonesia/cekping-agent"
 SECURE="false"
 
 # Parse arguments
-while getopts "t:s:v:S" opt; do
+while getopts "b:t:s:v:S" opt; do
   case $opt in
+    b) BRANCH="$OPTARG"
+    ;;
     t) TOKEN="$OPTARG"
     ;;
     s) SERVER_ADDR="$OPTARG"
@@ -25,6 +27,10 @@ while getopts "t:s:v:S" opt; do
     ;;
   esac
 done
+
+if [ "$VERSION" == "latest" ] && [ ! -z "$BRANCH" ] && [ "$BRANCH" != "main" ]; then
+    VERSION="$BRANCH"
+fi
 
 if [ -z "$TOKEN" ]; then
     echo "Error: Token is required. Use -t <token>"
